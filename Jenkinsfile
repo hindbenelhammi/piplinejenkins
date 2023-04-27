@@ -1,25 +1,31 @@
 pipeline {
     agent any
 
+    parameters {
+        string(name: 'URL', defaultValue: '', description: 'URL Java Project to Build')
+        string(name: 'BRANCH', defaultValue: 'main', description: 'Branch to Build')
+    }
+
     tools {
         // Install the Maven version configured as "M3" and add it to the path.
         maven "M3"
     }
-    
+
     stages {
         stage('Git') {
             steps {
                 // Get some code from a GitHub repository
-                git 'https://github.com/jglick/simple-maven-project-with-tests.git'
+                git url: "${params.URL}",
+                    branch: "${params.BRANCH}"
             }
-        }          
+        }
         stage('Compile') {
-            steps{
+            steps {
                 sh "mvn clean compile"
             }
-        }   
+        }
         stage('Test') {
-            steps{
+            steps {
                 sh "mvn test"
             }
             post {
@@ -27,17 +33,16 @@ pipeline {
                     junit '**/target/surefire-reports/TEST-*.xml'
                 }
             }
-        } 
+        }
         stage('Package') {
-            steps{
+            steps {
                 sh "mvn -DskipTests -Dmaven.test.skip package"
-            }
-        }     
             }
             post {
                 success {
-                    archiveArtifacts 'target/*.jar'
+                    archiveArtifacts 'target/*.jar,target/*.war'
                 }
+            }
         }
     }
-
+}
